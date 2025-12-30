@@ -1,0 +1,8 @@
+node_modules/
+target/
+*.jar
+__pycache__/
+.venv/
+.DS_Store
+.env
+/*.zip

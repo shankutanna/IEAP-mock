@@ -1,0 +1,59 @@
+pipeline {
+  agent any
+  environment {
+    REGISTRY = 'docker.io'
+    REGISTRY_CREDENTIALS = 'dockerhub-creds'
+    KUBECONFIG_CREDENTIALS = 'kubeconfig-creds'
+    K8S_NAMESPACE = 'ieap'
+    GIT_COMMIT = ''
+    FRONTEND_IMAGE = "${REGISTRY}/<YOUR_USER>/ieap-frontend:${env.GIT_COMMIT}"
+    JAVA_IMAGE = "${REGISTRY}/<YOUR_USER>/ieap-java:${env.GIT_COMMIT}"
+    PY_IMAGE = "${REGISTRY}/<YOUR_USER>/ieap-python:${env.GIT_COMMIT}"
+  }
+  stages {
+    stage('Checkout') { steps { checkout scm } }
+    stage('Build') {
+      parallel {
+        stage('Build Frontend') {
+          steps {
+            dir('frontend') {
+              sh 'docker build -t ${FRONTEND_IMAGE} .'
+            }
+          }
+        }
+        stage('Build Java') {
+          steps {
+            dir('java/employee-service') {
+              sh 'mvn -B -DskipTests package || true'
+              sh 'docker build -t ${JAVA_IMAGE} .'
+            }
+          }
+        }
+        stage('Build Python') {
+          steps {
+            dir('python/resume-parser') {
+              sh 'docker build -t ${PY_IMAGE} .'
+            }
+          }
+        }
+      }
+    }
+    stage('Push') {
+      steps {
+        withCredentials([usernamePassword(credentialsId: env.REGISTRY_CREDENTIALS, usernameVariable: 'USER', passwordVariable: 'PASS')]) {
+          sh 'echo $PASS | docker login -u $USER --password-stdin'
+          sh 'docker push ${FRONTEND_IMAGE} || true'
+          sh 'docker push ${JAVA_IMAGE} || true'
+          sh 'docker push ${PY_IMAGE} || true'
+        }
+      }
+    }
+    stage('Deploy to K8s') {
+      steps {
+        withCredentials([file(credentialsId: env.KUBECONFIG_CREDENTIALS, variable: 'KUBECONFIG_FILE')]) {
+          sh 'export KUBECONFIG=$KUBECONFIG_FILE; kubectl apply -f k8s/ --namespace=${K8S_NAMESPACE}'
+        }
+      }
+    }
+  }
+}
