@@ -1,9 +1,11 @@
 from fastapi import FastAPI
+
 app = FastAPI()
-@app.get('/health')
+
+@app.get("/parser/health")
 def health():
-    return {'status':'ok','service':'resume-parser'}
-@app.post('/parse')
-def parse(text: dict):
-    # dummy parsing
-    return {'parsed_name': text.get('name', 'unknown'), 'confidence': 0.92}
+    return {
+        "service": "python-parser",
+        "status": "UP"
+    }
+
