@@ -1,7 +1,7 @@
 {
   "name": "ieap-frontend",
   "version": "0.1.0",
-  "main": "server.js",
+  "type": "module",
   "scripts": {
     "start": "node server.js"
   },
