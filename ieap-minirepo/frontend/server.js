@@ -1,8 +1,7 @@
-const express = require("express");
-const fetch = require("node-fetch");
+import express from "express";
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
 app.get("/", async (req, res) => {
   let javaStatus = "DOWN";
@@ -11,9 +10,12 @@ app.get("/", async (req, res) => {
   try {
     const javaResp = await fetch("http://java-svc:8080/api/health");
     const data = await javaResp.json();
+
     javaStatus = data.status;
-    pythonStatus = data.python.includes("UP") ? "UP" : "DOWN";
-  } catch (e) {}
+    pythonStatus = data.python?.includes("UP") ? "UP" : "DOWN";
+  } catch (e) {
+    console.error("Backend not reachable");
+  }
 
   res.send(`
     <html>
@@ -38,4 +40,3 @@ app.get("/", async (req, res) => {
 app.listen(PORT, () => {
   console.log(`Frontend running on port ${PORT}`);
 });
-
