@@ -1,1 +1,37 @@
-
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sonarqube
+  namespace: sonarqube
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: sonarqube
+  template:
+    metadata:
+      labels:
+        app: sonarqube
+    spec:
+      securityContext:
+        fsGroup: 1000
+      containers:
+      - name: sonarqube
+        image: sonarqube:lts
+        ports:
+        - containerPort: 9000
+        resources:
+          requests:
+            memory: "2Gi"
+            cpu: "500m"
+          limits:
+            memory: "3Gi"
+            cpu: "1"
+        volumeMounts:
+        - name: sonarqube-storage
+          mountPath: /opt/sonarqube/data
+      volumes:
+      - name: sonarqube-storage
+        hostPath:
+          path: /data/sonarqube
+          type: DirectoryOrCreate
